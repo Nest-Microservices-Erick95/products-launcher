@@ -38,32 +38,33 @@ services:
 
   
   # Orders MS
-  # orders-ms:
-  #   container_name: orders-ms
-  #   build:
-  #     context: ./orders-ms
-  #     dockerfile: dockerfile.prod
-  #     args: #NOTA ARGS Y ENV: esto del args no es para variables de entorno, es para tener como constantes en nuestro dockerfile al que estamos apuntando en este build, y esas constantes en ese dockerfile tendrá el valor puesto aqui, por eso vemos que en el dockerfile.prod del proyecto de orders-ms pusimos ARG ORDERS_DATABASE_URL , con solo eso ya tenemos que ese arg de ORDERS_DATABASE_URL tenga el valor del arg de ORDERS_DATABASE_URL (con el mismo nombre pues) puesto aqui en el args del build de aqui del docker-compose.yaml, y por eso tambien en el dockerfile.prod del orders-ms pusimos ENV DATABASE_URL=$ORDERS_DATABASE_URL , para que entonces ahi establezcamos una variable de entorno pero esa variable de entorno sería cuando se construye la imagen, los ENV que se pongan en el dockerfile sería cuando se crea la imagen, y los environment que se ponen aqui en los services del docker-compose.yaml son a nivel del contenedor, cuando ya se está creando el contenedor, y vemos ahi en el dockerfile.prod del orders-ms que entonces la variable de entorno a nivel de imagen de de DATABASE_URL tendrá el valor del arg de ORDERS_DATABASE_URL puesto aqui en el docker-compose.yaml , asi asignamos el valor de ese arg poniendo $ORDERS_DATABASE_URL asi con un signo de peso al principio, asi funciona esto, y esto se hizo para tener esa variable de entorno de DATABASE_URL a nivel de la imagen cuando se construye en el dockerfile.prod del orders-ms ya que ahi en ese proyecto usamos postgres en la nube como base de datos, pero ahi en el dockerfile.prod se puso lo del RUN npx prisma migrate deploy y lo del RUN npx prisma generate, y para eso prisma lee el archivo schema.prisma, y dentro de ese archivo se lee la variable de entorno de DATABASE_URL, y esos comandos de prisma del migrate y generate se ejecutan con el RUN ahi, osea a nivel de imagen cuando se está creando, pero asi en ese punto cuando se crea esa imagen aun no se tendrá esa variable de entorno de DATABASE_URL ya que esa variable de entorno se establece en el environment abajo en este docker-compose.prod.yaml pero como dijimos eso es a nivel de contenedor, ya cuando la imagen ya está creada, y en el .dockerignore del orders-ms pusimos que se ignorara el archivo .env ahi, por lo tanto el archivo .env del orders-ms no estará en la imagen, asi que ahi daría un error al ejecutar el RUN npx prisma migrate deployy el RUN npx prisma generate del dockerfile.prod del orders-ms porque no podría leer en ese punto la variable de entorno de DATABASE_URL , y por eso es que necesitamos leer la variable de entorno DATABASE_URL pero a nivel de la imagen, y por eso es que aqui se hizo lodel args y el ENV en el dockerfile.prod del orders-ms,asi que este args es a nivel de la imagen y el ENV de ese dockerfile.prod es a nivel de la imagen, y el environment de este docker-compose.prod.yaml es a nivel del contenedor
-  #       - ORDERS_DATABASE_URL=${ORDERS_DATABASE_URL}
-  #   image: orders-ms-prod
-  #   environment:
-  #     - PORT=3002
-  #     - DATABASE_URL=${ORDERS_DATABASE_URL} #esto apunta a la url de postgres en la nube, para la cual usamos Neon para tener postgres en la nube, esa pagina de Neon se vio en el curso 2 de nodejs, y se explica y se puso un video de cómo configurarla, lo cual es muy facil, en la NOTA.txt de esta carpeta de 03-products-app de este curso
-  #     - NATS_SERVERS=nats://nats-server:4222
-  #   restart: always
-  # OJO que lo de arriba se comentó por lo explicado en la NOTA PRISMA PROD del dockerfile.prod del proyecto de orders-ms
   orders-ms:
     container_name: orders-ms
     build:
       context: ./orders-ms
       dockerfile: dockerfile.prod
+      args: #NOTA ARGS Y ENV: esto del args no es para variables de entorno, es para tener como constantes en nuestro dockerfile al que estamos apuntando en este build, y esas constantes en ese dockerfile tendrá el valor puesto aqui, por eso vemos que en el dockerfile.prod del proyecto de orders-ms pusimos ARG ORDERS_DATABASE_URL , con solo eso ya tenemos que ese arg de ORDERS_DATABASE_URL tenga el valor del arg de ORDERS_DATABASE_URL (con el mismo nombre pues) puesto aqui en el args del build de aqui del docker-compose.yaml, y por eso tambien en el dockerfile.prod del orders-ms pusimos ENV DATABASE_URL=$ORDERS_DATABASE_URL , para que entonces ahi establezcamos una variable de entorno pero esa variable de entorno sería cuando se construye la imagen, los ENV que se pongan en el dockerfile sería cuando se crea la imagen, y los environment que se ponen aqui en los services del docker-compose.yaml son a nivel del contenedor, cuando ya se está creando el contenedor, y vemos ahi en el dockerfile.prod del orders-ms que entonces la variable de entorno a nivel de imagen de de DATABASE_URL tendrá el valor del arg de ORDERS_DATABASE_URL puesto aqui en el docker-compose.yaml , asi asignamos el valor de ese arg poniendo $ORDERS_DATABASE_URL asi con un signo de peso al principio, asi funciona esto, y esto se hizo para tener esa variable de entorno de DATABASE_URL a nivel de la imagen cuando se construye en el dockerfile.prod del orders-ms ya que ahi en ese proyecto usamos postgres en la nube como base de datos, pero ahi en el dockerfile.prod se puso lo del RUN npx prisma migrate deploy y lo del RUN npx prisma generate, y para eso prisma lee el archivo schema.prisma, y dentro de ese archivo se lee la variable de entorno de DATABASE_URL, y esos comandos de prisma del migrate y generate se ejecutan con el RUN ahi, osea a nivel de imagen cuando se está creando, pero asi en ese punto cuando se crea esa imagen aun no se tendrá esa variable de entorno de DATABASE_URL ya que esa variable de entorno se establece en el environment abajo en este docker-compose.prod.yaml pero como dijimos eso es a nivel de contenedor, ya cuando la imagen ya está creada, y en el .dockerignore del orders-ms pusimos que se ignorara el archivo .env ahi, por lo tanto el archivo .env del orders-ms no estará en la imagen, asi que ahi daría un error al ejecutar el RUN npx prisma migrate deployy el RUN npx prisma generate del dockerfile.prod del orders-ms porque no podría leer en ese punto la variable de entorno de DATABASE_URL , y por eso es que necesitamos leer la variable de entorno DATABASE_URL pero a nivel de la imagen, y por eso es que aqui se hizo lodel args y el ENV en el dockerfile.prod del orders-ms,asi que este args es a nivel de la imagen y el ENV de ese dockerfile.prod es a nivel de la imagen, y el environment de este docker-compose.prod.yaml es a nivel del contenedor
+        - ORDERS_DATABASE_URL=${ORDERS_DATABASE_URL}
     ##image: orders-ms-prod
     image: northamerica-northeast1-docker.pkg.dev/tienda-microservices-432723/image-registry/orders-ms
     environment:
       - PORT=3002
-      - DATABASE_URL=${ORDERS_DATABASE_URL}
+      - DATABASE_URL=${ORDERS_DATABASE_URL} #esto apunta a la url de postgres en la nube, para la cual usamos Neon para tener postgres en la nube, esa pagina de Neon se vio en el curso 2 de nodejs, y se explica y se puso un video de cómo configurarla, lo cual es muy facil, en la NOTA.txt de esta carpeta de 03-products-app de este curso
       - NATS_SERVERS=nats://nats-server:4222
     restart: always
+    ##OJO que en la carpeta 03-products-app habíamos comentado lo de arriba para este orders-ms y puesto lo de abajo, pero al final nos quedamos mejor con lo de arriba que corresponse a la version 3 (que es lo mismo que la version 1) puesta en el dockerfile.prod del orders-ms, checarlo, esto para hacerlo igual que el profesor y evitar problemas especialmente en la parte de google cloud del curso
+  # orders-ms:
+  #   container_name: orders-ms
+  #   build:
+  #     context: ./orders-ms
+  #     dockerfile: dockerfile.prod
+  #   ##image: orders-ms-prod
+  #   image: northamerica-northeast1-docker.pkg.dev/tienda-microservices-432723/image-registry/orders-ms
+  #   environment:
+  #     - PORT=3002
+  #     - DATABASE_URL=${ORDERS_DATABASE_URL}
+  #     - NATS_SERVERS=nats://nats-server:4222
+  #   restart: always
 
   #payments-ms
   payments-ms:

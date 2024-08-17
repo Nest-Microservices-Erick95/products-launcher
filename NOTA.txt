@@ -23,4 +23,9 @@ se puso por eso. En ese archivo de cloudbuild.yml en los proyectos se puso el ur
 que subimos a google cloud, para tomarla de ahi y subir la construccion de la nueva imagen ya actualizada ahi mismo, y esa
 imagen se actualizará cuando hacemos un push a la rama de cloud-build en nuestros repositorios de github de nuestros
 proyectos o submodulos, asi es como funcionará el CI/CD y eso tambien se puede hacer con una aplicacion monolitica,
-checar los videos de lo de google cloud en la NOTA.txt de la carpeta 03-products-app
+checar los videos de lo de google cloud en la NOTA.txt de la carpeta 03-products-app.
+OJO que el archivo cloudbuild.yml del proyecto de orders-ms está un poco diferente al de los demas proyectos debido al arg
+de la imagen de docker que se usa para ese proyecto que se ve en el docker-compose.prod.yml de esta carpeta de products-launcher,
+
+Aqui en esta carpeta de products-launcher tambien modificamos un poco el archivo dockerfile.prod.yml del orders-ms debido a ese tema 
+de google cloud, checarlo
