@@ -1,0 +1,101 @@
+version: '3'
+
+services:
+  
+  #nats server
+  nats-server:
+    container_name: nats-server
+    image: nats:latest
+    
+
+  # client-gateway:
+  gateway-ms:
+    container_name: gateway-ms
+    build: #asi como está aqui con el context y dockerfile en el build se hace cuando queremos apuntar a un dockerfile que no se llama dockerfile sino que se llama de otra forma como el dockerfile.prod que está en el proyecto de gateway-ms
+      context: ./gateway-ms
+      dockerfile: dockerfile.prod
+    ##image: gateway-ms-prod #para el nombre que tendrá la imagen construida con el build de arriba, ya que por default le concatena el nombre de la carpeta en la que está este archivo que en este caso es la carpeta 03-products-app y el nombre de la carpeta donde está el dockerfile de la imagen que en este caso es la carpeta gateway-ms , y entonces asipor default el nombre de la imagen quedaría como 03-products-app-gateway-ms , pero pues con esta linea le podemos especificar para que la imagen tenga de nombre gateway-ms-prod en este caso
+    #lo de la anterior linea se comentó y se puso lo de la siguiente linea al final para la seccion de google cloud del curso para asi que esta imagen tenga de nombre lo de la siguiente linea que es una referencia a la url de nuestro repositorio de imagenes de docker en google cloud, y para subirlas ahi deben tener el nombre con esa url como se ve en la siguiente linea y ya al final de la url ahora sí el nombre que tendrá nuestra imagen de docker dentro de ese repositorio de google cloud, tal como lo hacíamos con docker hub al subir nuestras imagenes de docker ahi de que tambien debían tener un nombre especifico para poder subirlas ahi como se vio en el curso de spring con docker y kubernetes, esto tambien se explica en la NOTA.txt de esta carpeta de 03-products-app del curso, y esto tambien se hizo en las imagenes de abajo, para asi ejecutar en la raiz de la carpeta 03-products-app el comando de docker-compose -f docker-compose.prod.yml build para solo generar esas imagenes con esos nombres que están en este archivo sin crear el contenedor de esas imagenes ya que eso se hace con el docker-compose up , y asi ya despues ejecutar el comando de docker image push northamerica-northeast1-docker.pkg.dev/tienda-microservices-432723/image-registry/gateway-ms , eso para subir esta imagen al repositorio de imagenes de docker de google cloud, o tambien podemos generar cada imagen con el comando del docker build visto en el curso de spring con docker y kubernetes pero pues asi tendríamos que ejecutar ese comando del docker build por cada imagen, y en cambio asi con este archivo del docker-compose podemos generar esas imagenes con esos nombres al mismo tiempo con un solo comando 
+    image: northamerica-northeast1-docker.pkg.dev/tienda-microservices-432723/image-registry/gateway-ms
+    ports:
+      - ${CLIENT_GATEWAY_PORT}:${CLIENT_GATEWAY_PORT}
+    environment: 
+      - PORT=${CLIENT_GATEWAY_PORT}
+      - NATS_SERVERS=nats://nats-server:4222 
+
+  #products-ms
+  products-ms:
+    container_name: products-ms
+    build:
+      context: ./products-ms
+      dockerfile: dockerfile.prod
+    ##image: products-ms-prod
+    image: northamerica-northeast1-docker.pkg.dev/tienda-microservices-432723/image-registry/products-ms
+    environment:
+      - PORT=3001
+      - NATS_SERVERS=nats://nats-server:4222
+      - DATABASE_URL=file:./dev.db
+
+  
+  # Orders MS
+  # orders-ms:
+  #   container_name: orders-ms
+  #   build:
+  #     context: ./orders-ms
+  #     dockerfile: dockerfile.prod
+  #     args: #NOTA ARGS Y ENV: esto del args no es para variables de entorno, es para tener como constantes en nuestro dockerfile al que estamos apuntando en este build, y esas constantes en ese dockerfile tendrá el valor puesto aqui, por eso vemos que en el dockerfile.prod del proyecto de orders-ms pusimos ARG ORDERS_DATABASE_URL , con solo eso ya tenemos que ese arg de ORDERS_DATABASE_URL tenga el valor del arg de ORDERS_DATABASE_URL (con el mismo nombre pues) puesto aqui en el args del build de aqui del docker-compose.yaml, y por eso tambien en el dockerfile.prod del orders-ms pusimos ENV DATABASE_URL=$ORDERS_DATABASE_URL , para que entonces ahi establezcamos una variable de entorno pero esa variable de entorno sería cuando se construye la imagen, los ENV que se pongan en el dockerfile sería cuando se crea la imagen, y los environment que se ponen aqui en los services del docker-compose.yaml son a nivel del contenedor, cuando ya se está creando el contenedor, y vemos ahi en el dockerfile.prod del orders-ms que entonces la variable de entorno a nivel de imagen de de DATABASE_URL tendrá el valor del arg de ORDERS_DATABASE_URL puesto aqui en el docker-compose.yaml , asi asignamos el valor de ese arg poniendo $ORDERS_DATABASE_URL asi con un signo de peso al principio, asi funciona esto, y esto se hizo para tener esa variable de entorno de DATABASE_URL a nivel de la imagen cuando se construye en el dockerfile.prod del orders-ms ya que ahi en ese proyecto usamos postgres en la nube como base de datos, pero ahi en el dockerfile.prod se puso lo del RUN npx prisma migrate deploy y lo del RUN npx prisma generate, y para eso prisma lee el archivo schema.prisma, y dentro de ese archivo se lee la variable de entorno de DATABASE_URL, y esos comandos de prisma del migrate y generate se ejecutan con el RUN ahi, osea a nivel de imagen cuando se está creando, pero asi en ese punto cuando se crea esa imagen aun no se tendrá esa variable de entorno de DATABASE_URL ya que esa variable de entorno se establece en el environment abajo en este docker-compose.prod.yaml pero como dijimos eso es a nivel de contenedor, ya cuando la imagen ya está creada, y en el .dockerignore del orders-ms pusimos que se ignorara el archivo .env ahi, por lo tanto el archivo .env del orders-ms no estará en la imagen, asi que ahi daría un error al ejecutar el RUN npx prisma migrate deployy el RUN npx prisma generate del dockerfile.prod del orders-ms porque no podría leer en ese punto la variable de entorno de DATABASE_URL , y por eso es que necesitamos leer la variable de entorno DATABASE_URL pero a nivel de la imagen, y por eso es que aqui se hizo lodel args y el ENV en el dockerfile.prod del orders-ms,asi que este args es a nivel de la imagen y el ENV de ese dockerfile.prod es a nivel de la imagen, y el environment de este docker-compose.prod.yaml es a nivel del contenedor
+  #       - ORDERS_DATABASE_URL=${ORDERS_DATABASE_URL}
+  #   image: orders-ms-prod
+  #   environment:
+  #     - PORT=3002
+  #     - DATABASE_URL=${ORDERS_DATABASE_URL} #esto apunta a la url de postgres en la nube, para la cual usamos Neon para tener postgres en la nube, esa pagina de Neon se vio en el curso 2 de nodejs, y se explica y se puso un video de cómo configurarla, lo cual es muy facil, en la NOTA.txt de esta carpeta de 03-products-app de este curso
+  #     - NATS_SERVERS=nats://nats-server:4222
+  #   restart: always
+  # OJO que lo de arriba se comentó por lo explicado en la NOTA PRISMA PROD del dockerfile.prod del proyecto de orders-ms
+  orders-ms:
+    container_name: orders-ms
+    build:
+      context: ./orders-ms
+      dockerfile: dockerfile.prod
+    ##image: orders-ms-prod
+    image: northamerica-northeast1-docker.pkg.dev/tienda-microservices-432723/image-registry/orders-ms
+    environment:
+      - PORT=3002
+      - DATABASE_URL=${ORDERS_DATABASE_URL}
+      - NATS_SERVERS=nats://nats-server:4222
+    restart: always
+
+  #payments-ms
+  payments-ms:
+    container_name: payments-ms
+    build:
+      context: ./payments-ms
+      dockerfile: dockerfile.prod
+    ##image: payments-ms-prod
+    image: northamerica-northeast1-docker.pkg.dev/tienda-microservices-432723/image-registry/payments-ms
+    ports:
+      - ${PAYMENTS_MS_PORT}:${PAYMENTS_MS_PORT}
+    environment:
+      - PORT=${PAYMENTS_MS_PORT}
+      - STRIPE_SECRET=${STRIPE_SECRET}
+      - STRIPE_SUCCESS_URL=${STRIPE_SUCCESS_URL}
+      - STRIPE_CANCEL_URL=${STRIPE_CANCEL_URL}
+      - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
+      - NATS_SERVERS=nats://nats-server:4222
+    restart: always
+
+  #auth-ms
+  auth-ms:
+    container_name: auth-ms
+    build:
+      context: ./auth-ms
+      dockerfile: dockerfile.prod
+    ##image: auth-ms-prod
+    image: northamerica-northeast1-docker.pkg.dev/tienda-microservices-432723/image-registry/auth-ms
+    environment:
+      - PORT=3004
+      - NATS_SERVERS=nats://nats-server:4222
+      - DATABASE_URL=${AUTH_DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+    restart: always
+

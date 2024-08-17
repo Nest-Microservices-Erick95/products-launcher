@@ -1,0 +1,5 @@
+Todo lo que está aqui es lo mismo que en la carpeta 03-products-app, asi que primero ver la carpeta
+01-products-app, despues la carpeta 02-products-app y despues lacarpeta 03-products-app , en ese orden,
+y lo de esta carpeta de products-launcher la utilizamos para aqui tener los submodulos de github de 
+nuestros microservicios, eso de los submodulos se explica en la NOTA.txt de la carpeta 02-products-app ,
+asi que en esta carpeta de products-launcher se aplican esos submodulos, por eso creamos esta carpeta
