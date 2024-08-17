@@ -10,3 +10,17 @@ submodule puede que se construya sin el node_modules y sin el archivo .env de es
 repositorios en github para esos proyectos no está en node_modules ni el archivo .env ya que en el archivo
 .gitignore de esos proyectos pusimos el node_modules y el .env , asi que tambien tendríamos que crear el
 archivo .env en ese submodulo creado si queremos ejecutar ese proyecto dentro de esta carpeta de products-launcher
+
+Esta es la carpeta con la que se trabajó con google cloud, lo cual se explica en la NOTA.txt de la carpeta
+03-products-app de este curso, y esta carpeta de products-launcher es la que se trabajó ya al final con google cloud
+para los triggers y eso porque como dije arriba en esta carpeta se implementó los submodulos en github, osea esta carpeta
+de products-launcher es la que está subida a github, junto con los submodulos que apuntan a sus propios repositorios,
+osea esta carpeta y sus submodulos tiene conexion directa con github, y eso nos sirve para los triggers de google cloud
+para implementar el CI/CD , por eso en cada submodulo pusimos el archivo cloudbuild.yml que utiliza google cloud con los
+triggers del CI/CD para saber qué dockerfile tomar si tomar el archivo llamado dockerfile como lo hace por default o tomar
+el dockerfile.prod que tenemos en nuestros proyectos o submodulos, y otras cosas, asi que ese archivo en cada submodulo
+se puso por eso. En ese archivo de cloudbuild.yml en los proyectos se puso el url de la imagen de docker para ese proyecto
+que subimos a google cloud, para tomarla de ahi y subir la construccion de la nueva imagen ya actualizada ahi mismo, y esa
+imagen se actualizará cuando hacemos un push a la rama de cloud-build en nuestros repositorios de github de nuestros
+proyectos o submodulos, asi es como funcionará el CI/CD y eso tambien se puede hacer con una aplicacion monolitica,
+checar los videos de lo de google cloud en la NOTA.txt de la carpeta 03-products-app
