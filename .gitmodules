@@ -1,0 +1,15 @@
+[submodule "auth-ms"]
+	path = auth-ms
+	url = https://github.com/Nest-Microservices-Erick95/auth-microservice.git
+[submodule "gateway-ms"]
+	path = gateway-ms
+	url = https://github.com/Nest-Microservices-Erick95/gateway-microservice.git
+[submodule "orders-ms"]
+	path = orders-ms
+	url = https://github.com/Nest-Microservices-Erick95/orders-microservice.git
+[submodule "payments-ms"]
+	path = payments-ms
+	url = https://github.com/Nest-Microservices-Erick95/payments-microservice.git
+[submodule "products-ms"]
+	path = products-ms
+	url = https://github.com/Nest-Microservices-Erick95/products-microservice.git
