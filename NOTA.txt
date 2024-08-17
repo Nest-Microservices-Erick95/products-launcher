@@ -2,4 +2,11 @@ Todo lo que está aqui es lo mismo que en la carpeta 03-products-app, asi que pr
 01-products-app, despues la carpeta 02-products-app y despues lacarpeta 03-products-app , en ese orden,
 y lo de esta carpeta de products-launcher la utilizamos para aqui tener los submodulos de github de 
 nuestros microservicios, eso de los submodulos se explica en la NOTA.txt de la carpeta 02-products-app ,
-asi que en esta carpeta de products-launcher se aplican esos submodulos, por eso creamos esta carpeta
+asi que en esta carpeta de products-launcher se aplican esos submodulos, por eso creamos esta carpeta.
+Si despues de generar un submodulo y nos metemos a ese proyecto del submodulo nos dan errores en los
+imports de los paquetes que tengamos simplemente nos vamos a la raiz de ese proyecto y ponemos: npm install
+para crear el node_modules ahi y asi tener todos nuestros paquetes en el proyecto porque al construir el
+submodule puede que se construya sin el node_modules y sin el archivo .env de ese proyecto ya que en los
+repositorios en github para esos proyectos no está en node_modules ni el archivo .env ya que en el archivo
+.gitignore de esos proyectos pusimos el node_modules y el .env , asi que tambien tendríamos que crear el
+archivo .env en ese submodulo creado si queremos ejecutar ese proyecto dentro de esta carpeta de products-launcher
