@@ -28,4 +28,174 @@ OJO que el archivo cloudbuild.yml del proyecto de orders-ms está un poco difere
 de la imagen de docker que se usa para ese proyecto que se ve en el docker-compose.prod.yml de esta carpeta de products-launcher,
 
 Aqui en esta carpeta de products-launcher tambien modificamos un poco el archivo dockerfile.prod.yml del orders-ms debido a ese tema 
-de google cloud, checarlo
+de google cloud, checarlo.
+
+Despues aplicamos lo de Kubernetes para tener todos nuestros microservicios con kubernetes, solo que en el curso de spring
+con docker y kubernetes se vio haciendolo con minikube y aws, y aqui en este curso se usó el kubernetes que viene incluido
+en el docker desktop, solo nos vamos a la parte de configuracion en el docker desktop y en la parte de kubernetes darle donde dice
+Enable kubernetes y en Apply y restart y con eso en la parte de abajo se debería poner en verde un rectangulo con el logo de
+kubernetes para indicarnos que ya está ejecutandose correctamente un cluster de kubernetes, asi tendríamos lo equivalente a minikube
+pero mas facil, y en este curso tambien se utilizó Helm como package manager (administrador de paquetes como lo es npm para node por
+ejemplo) para kubernetes, para instalarlo solo nos vamos a esta pagina: https://helm.sh/ , y ahi aparecerá una parte que dice sobre
+instalar helm, y para windows usamos el comando que está ahi con chocolatey (para eso hay que descargar chocolatey primero) y
+ejecutamos ese comando (el cual es choco install kubernetes-helm) como administrador en el cmd de la computadora y listo, cerramos 
+ese cmd y volvemos a abrirlo y ponemos helm version y nos debe dar la respuesta de la version de helm y listo.
+
+En esta carpeta de products-launcher se pusieron los archivos yaml de kubernetes en la carpeta k8s, ahi se crearon los deployments,
+services, etc de kubernetes vistos en el curso de spring con docker y kubernetes, ahi en ese curso se explica todo.
+
+Para crear el proyecto con kubernetes, con su configuracion inicial del cluster, sobre la raiz de la carpeta k8s que pusimos en esta
+carpeta de products-launcher ponemos:
+helm create tienda  -> para llamar a nuestro proyecto o cluster con el nombre de tienda, con esto se creará una carpeta llamada tienda
+                       en nuestra carpeta de k8s, esto con la configuracion inicial del cluster, y en esa carpeta de tienda habrá un
+                       archivo llamado values.yaml , ahi borramos todo su contenido porque solo sirve ese archivo para centralizar ahi
+                       valores para tomar esos valores en otros archivos, pero eso en este curso no se usa. Tambien con este comando
+					   dentro de la carpeta k8s se creará una subcarpeta llamada templates, ahi es donde pondremos nosotros los archivos
+                       yaml del deployment, service, secrets, etc de kubernetes vistos en el curso de spring con docker y kubernetes,
+                       por default esa carpeta tendrá ya archivos, pero todo lo que está en esa carpeta lo podemos borrar para asi crear
+                       nuestros archivos yaml nosotros
+Despues sobre la raiz de la carpeta templates que está dentro de la carpeta k8s creamos la carpeta llamada gateway-ms, y ahora sobre la
+raiz de esa carpeta pusimos este comando: 
+kubectl create deployment gateway-ms --image=northamerica-northeast1-docker.pkg.dev/tienda-microservices-432723/image-registry/gateway-ms --dry-run=client -o yaml > deployment.yml
+eso para crear ahi el archivo deployment.yml que tenga la configuracion del deployment de kubernetes para el proyecto de gateway-ms, y que
+ese deployment tenga la imagen de docker del gateway-ms que subimos a google cloud, y que no tenga ningun efecto sobre el cluster sino que
+solo cree ese archivo ahi en esa ubicacion que dije y ya (eso debido al --dry-run=client que puse en ese comando), hay que recordar que esa
+es la forma imperativa de crear el deployment mediante comandos asi como se vio en el curso de spring con docker y kubernetes.
+Aunque OJO que al hacer eso se creó ese archivo de deployment.yaml con la codificacion UTF-16 automaticamente, y entonces despues 
+debemos ejecutar el comando sobre la raiz de la carpeta tienda que está dentro de la carpeta k8s (osea en la carpeta donde tenemos el archivo 
+Chart.yaml y values.yaml ya que este comando los usa): helm install tienda . , ese comando solo se hace una sola vez para nuestra configuracion 
+inicial, pero al hacer ese comando me dio error porque nuestros archivos yaml de la carpeta templates deben estar en codificacion UTF-8, pero asi
+están en UTF-16 como dijimos, entonces si nos sale ese error lo que debemos hacer es eliminar ese archivo de deployment.yaml que se creó y ahora
+crearlo con este nuevo comando (sobre la carpeta k8s/tienda/templates/gateway-ms) que es como el anterior pero asi nos aseguramos que ese archivo 
+tenga la codificacion UTF-8:
+kubectl create deployment gateway-ms --image=northamerica-northeast1-docker.pkg.dev/tienda-microservices-432723/image-registry/gateway-ms --dry-run=client --output=yaml | Out-File deployment.yml -Encoding UTF8
+y asi ya tendrá ese deployment.yaml el encoding de "UTF-8 with BOM" , y eso es compatible asi que al ejecutar de nuevo el helm install tienda .
+sobre la carpeta de tienda ya no nos dará error, y como dije ese comando solo se pone una vez y ya.que en el curso se puso ese comando y el del 
+helm upgrade que se dirá a continuacion cuando solo teníamos el deployment del gateway-ms, y despues de ese comando igual sobre la raiz
+de la carpeta tienda donde está los archivos Chart.yaml y values.yaml ponemos el comando: helm upgrade tienda . , y ese comando lo tendremos que
+poner cada vez que nosotros hagamos un cambio, ya sea que creemos nuevos archivos yaml en la carpeta templates o que hagamos alguna modificacion
+en alguno de esos archivos yaml, y ese comando tambien requiere que nuestros archivos yaml de la carpeta templates estén codificados en 
+UTF-8, incluyendo deployments, services, etc, asi que siempre debemos crear nuestros archivos yaml de esa forma como se puso arriba para que 
+tengan el UTF-8.
+Y OJO que ese comando de helm upgrade va a crear y ejecutar un contenedor en un pod del cluster por cada archivo yaml que tengamos en la carpeta
+k8s/tiends/templates , y esos contenedores de esos pods lo podemos ver en la parte de Contenedores del docker desktop, y podemos verlos tambien
+con el comando (sobre cualquier ubicacion) kubectl get pods , aunque OJO que al principio nos dará error no ese comando sino la ejecucion de ese pod,
+y podremos ver ese error si ponemos kubectl get pods, y ahi en READY tendrá 0/1 en los pods, y podremos ver la descripcion de ese error en los pods
+si copiamos el nombre de ese pod que nos salga con el kubectl get pods, y ponemos kubectl describe pods (nombre_del_pod) , y asi nos saldrá la causa
+de ese error y nos dirá algo como que no se pudo descargar la imagen de docker que subimos a google cloud debido a que no tiene los permisos,
+asi que aunque hayamos iniciado sesion en google cloud y todo aun asi necesitamos darle permiso al cluster de kubernetes para acceder a google cloud
+y asi descargar nuestra imagen de docker que subimos ahi, esto solo al principio, una vez, y para eso ver este video porque hicimos una configuracion
+en google cloud para añadir un rol y pues es mejor ver el video para entenderle mejor:
+https://cursos.devtalles.com/courses/take/nestjs-microservicios/lessons/53816991-acceso-de-lectura-al-registro-de-google-cloud
+Y OJO que los comandos que pone el profesor del kubectl en ese video dan problemas con windows, asi que para que me funcionara esos comandos los puse
+en el git bash ya que el git bash corre sobre linux y tanto en linux como en mac funcionan bien esos comandos, asi que yo ejecuté esos comandos
+en la consola del git bash en cualquier ubicacion de mi computadora, esto especialmente para los comandos de kubectl create secret y kubectl patch
+serviceaccount , esos 2 comandos son los que dan el error en windows asi que al menos esos 2 ejecutarlos en el git bash, esos comandos solo los
+hacemos una vez.
+
+Para poder ver los logs de cada contenedor para ver si ya se ha ejecutado correctamente o ver cualquier error como si fuera la consola de nuestro
+proyecto ponemos sobre cualquier ubicacion kubectl logs (nombre_del_pod)
+
+Podemos ver si los pods están funcionando correctamente o no si ponemos el comando de kubectl get pods y deben de decir 1/1 en la parte que diga READY,
+eso si tenemos una replica de ese pod, si tenemos 3 replicas de ese pod pues debería de decir para ese pod 3/3 por ejemplo 
+
+Cada vez que hacemos el helm upgrade tienda . sobre la carpeta de k8s/tienda se eliminan o paran su ejecucion los pods anteriores y se crea y ponen
+en ejecucion los nuevos pods que tengan los deployments.yaml actualizados, esto lo podemos ver en la parte de contenedores del docker desktop, ahi
+en el docker-desktop veremos los pods y las imagenes (dentro de contenedores) que tienen esos pods.
+
+Despues creamos el service en la carpeta k8s/tienda/templates/gateway-ms ya que ese será el service del deployment del gateway-ms , para eso pusimos
+ahi este comando:
+kubectl create service nodeport gateway-ms --tcp=3000 --dry-run=client --output=yaml | Out-File service.yml -Encoding UTF8
+Notese que hicimos lo mismo de ponerle lo del UTF8 explicado arriba, y creamos ese service como de tipo nodeport ya que el nodeport permite la
+comunicacion desde afuera del cluster de kubernetes, al igual que el tipo loadbalancer visto en el curso de spring con docker y kubernetes, aunque en
+el curso se creó con el tipo nodeport, y ya despues sobre la carpeta k8s/tienda aplicamos una vez mas el helm upgrade tienda .
+para actualizar ese cambio en nuestro cluster y entonces asi ya podremos acceder a nuestros endpoints del gateway-ms, para eso ponemos en cualquier
+ubicacion kubectl get services y el service de tipo nodeport tendrá en la parte que dice ahi de PORTS el puerto externo (izquierda) y el puerto interno
+(derecha) , entonces el que debemos usar para acceder a los endpoints del gateway-ms es el puerto interno, osea el de la derecha de ahi, ese puerto
+será generado por el cluster, y asi ya podremos probar nuestros endpoints del gateway-ms desde postman, aunque nos dará un internal server error si
+no tenemos aun en el cluster el deployment y service de nats, y tambien el deployment y service de los demas microservicios para pues poder llegar a 
+ellos y que nuestro gateway-ms se pueda comunicar con ellos.
+
+Hasta este momento despues de hacer todos los pasos de arriba solo teníamos el gateway-ms con su deployment y service, asi que despues para crear el 
+deployment de nats se creó la carpeta llamada nats en el k8s/tienda/templates, y sobre esa carpeta de k8s/tienda/templates/nats pusimos este comando:
+kubectl create deployment nats --image=nats --dry-run=client --output=yaml | Out-File deployment.yml -Encoding UTF8
+Notese que en ese comando le estamos especificando que la imagen de docker a tomar sea nats, y asi sin especificarle lo de la url de google cloud por
+default se irá a docker hub y ahi buscará esa imagen de nats y por default la buscará con el tag de latest. Despues creamos el service de nats con el
+siguiente comando igual sobre la carpeta k8s/templates/nats:
+kubectl create service clusterip nats --tcp=4222 --dry-run=client --output=yaml | Out-File service.yml -Encoding UTF8
+Notese que ese service de nats ahora lo estamos creando de tipo clusterip y no de tipo nodeport como lo hicimos con el gateway-ms arriba, esto debido
+a que con el client-ms sí nos interesaba comunicarnos desde afuera del cluster como en postman o algun frontend para acceder a sus endpoints, pero
+con el nats no, el nats solo sirve para comunicacion interna dentro del cluster para que el gateway-ms y los demas microservicios se comuniquen con nats
+internamente en el cluster sin acceder a nats directamente desde postman o algun frontend, y para eso es el service de clusterip.
+Despues sobre k8s/tienda volvimos a poner el comando de helm upgrade tienda . para actualizar esos cambios. Y OJO que ya con esto debemos tener en el
+deployment.yml del gateway-ms la variable de entorno de NATS_SERVERS con el value de "nats://nats" , esto hará la comunicacion hacia el service de nats,
+el cual tiene el mismo nombre de nats, osea en el service.yml de nats podemos ver que ese service se identifica como nats, y asi entonces ese valor de la
+variable de entorno NATS_SERVERS del deployment.yml del gateway-ms hará referencia al service de nats, comunicandose asi el gateway-ms con nats ya que el
+deployment.yml de nats tambien se identifica con ese nombre de nats y asi se enlaza con su service, relacionando asi entonces el pod de gateway-ms con
+el service de nats, y el pod de nats tambien con el service de nats, comunicandose asi entre si mediante ese service de kubernetes, y para los otros
+microservicios de hecho ya no necesitaremos crear su service ya que con solo ponerle como variable de entorno lo mismo de NATS_SERVERS con ese valor de
+"nats://nats" ya haremos que esos otros microservicios ya se comuniquen con el service de nats y asi con el pod de nats, ya sin crearles el service a los
+demas microservicios, solo creamos el propio service del gateway-ms porque el gateway-ms debe comunicarse con nats y tambien con el mundo exterior, osea
+con postman o algun frontend, pero los demas microservicios no ya que solo son llamados desde el gateway-ms (mediante nats) y ya, aunque el payments-ms
+sí necesita tambien su comunicacion con el mundo exterior (ademas de ser un microservicio como los demas, ya que ese proyecto de payments-ms es un hibrido)
+debido al webhook que tiene con stripe porque stripe necesita llamar desde afuera del cluster a un endpoint del webhook de payments-ms al realizar un pago 
+en stripe, asi que para payments-ms sí necesitaríamos crear su propio service tambien de tipo nodeport, pero para los demas microservicios como el products-ms,
+orders-ms, y auth-ms no se necesita crearles su propio service, basta con sus deployments y ya.
+
+Para el deployment del products-ms creamos la carpeta k8s/tienda/templates/products-ms y ahi pusimos:
+kubectl create deployment products-ms --image=northamerica-northeast1-docker.pkg.dev/tienda-microservices-432723/image-registry/products-ms --dry-run=client --output=yaml | Out-File deployment.yml -Encoding UTF8
+y en el deployment.yml creado pusimos las variables de entorno de PORT, NATS_SERVERS (ambas tambien en el deployment-yml del gateway-ms) y tambien la
+variable de entorno de DATABASE_URL que le pusimos como valor file:./dev.db asi sin usar secrets ni nada porque pues ahi usamos sqlite y no una base de datos
+externa con contraseña y eso.
+
+Para el deployment del orders-ms creamos la carpeta k8s/tienda/templates/orders-ms y ahi pusimos:
+kubectl create deployment orders-ms --image=northamerica-northeast1-docker.pkg.dev/tienda-microservices-432723/image-registry/orders-ms --dry-run=client --output=yaml | Out-File deployment.yml -Encoding UTF8 
+En ese deployment debíamos poner las variables de entorno de PORT, NATS_SERVERS y DATABASE_URL (esas tambien las pusimos en el deployment.yml del products-ms),
+pero OJO que en el orders-ms sí teníamos informacion sensible en la variable de entorno DATABASE_URL debido a que en su valor ponemos la url de la base de
+datos en la nube y en esa url está el usuario y contraseña, y es inseguro poner ahi en el deployment.yml informacion sensible, ese tipo de datos se manejan
+con los secrets de kubernetes que tambien se vieron en el curso de spring con docker y kubernetes, y aqui en este curso para crear ese secret solo pusimos el
+siguiente comando sobre la carpeta k8s/tienda/templates/orders-ms (aunque ese comando puede ser en cualquier ubicacion):
+kubectl create secret generic orders-secrets --from-literal=database_url="postgresql://orders-db_owner:AyxgZ5q3PlEJ@ep-frosty-heart-a5qyq50s.us-east-2.aws.neon.tech/orders-db?sslmode=require"
+Asi creamos ese secret que por default tendrá el tipo de Opaque para poner los valores de los secrets en base64, y ese secret tendrá el nombre de 
+orders-secrets y el key de ese secret será database_url y su value de esa key será la url de postgres en la nube, aunque con ese comando no se crea un archivo 
+en nuestro proyecto sino que el secret se crea internamente en el cluster de kubernetes, y podemos ver ese secret si ponemos sobre cualquier ubicacion: 
+kubectl get secrets
+entonces con eso pusimos en el deployment.yml del orders-ms la variable de entorno con el valueFrom y el secretKeyRef por venir de un secret y ahi se pone
+el name del secret y el key del secret que se explicó, asi como se vio en el curso de spring con docker y kubernetes, y ya despues de eso pues lo mismo del
+comando de helm upgrade tienda . sobre la carpeta k8s/tienda.
+
+Para el deployment del auth lo mismo sobre k8s/tienda/templates/auth-ms:
+kubectl create deployment auth-ms --image=northamerica-northeast1-docker.pkg.dev/tienda-microservices-432723/image-registry/auth-ms --dry-run=client --output=yaml | Out-File deployment.yml -Encoding UTF8 
+Para sus secrets pusimos el comando:
+kubectl create secret generic auth-secrets --from-literal=database_url="mongodb+srv://root-user:Erick955@auth-microservice-db.lv2o4.mongodb.net/AuthDB" --from-literal=jwt_secret="EstoDebEdeS3rUnStringSeguro"
+E hicimos los cambios respectivos en el deployment.yml del auth-ms para ponerle sus variables de entorno y sus secrets ahi tal como lo hicimos arriba con el
+orsers-ms.
+
+Para el payments:
+kubectl create deployment payments-ms --image=northamerica-northeast1-docker.pkg.dev/tienda-microservices-432723/image-registry/payments-ms --dry-run=client --output=yaml | Out-File deployment.yml -Encoding UTF8 
+Y para el secret del payments-ms:
+kubectl create secret generic payments-secrets --from-literal=stripe_secret="sk_test_51Pll24DfKYIxnfgbJtFaune1Zb6k9DkDG7dzutqiriVLtGsdSiGHimp28Xm4Nj5LwrjeFG9Co2nEmm4mlHEq011i002ESsp3Q2" --from-literal=stripe_endpoint_secret="whsec_ac85d474b05eacef62d64a119bef3fe89328336c2c9bbd55b5d8eda3043c7392"
+Y le pusimos las variables de entorno y los secrets en el deployment.yml del payments-ms.
+Para el service del payments-ms para que stripe pueda llamar al endpoint del webhook como se explicó mas arriba pusimos sobre la carpeta de payments-ms:
+kubectl create service nodeport payments-ms --tcp=3000 --dry-run=client --output=yaml | Out-File service.yml -Encoding UTF8
+
+Si queremos eliminar un secret ponemos en cualquier ubicacion: kubectl delete secrets (nombre_del_secret) , y ese nombre del secret se puede sacar poniendo el
+comando de kubectl get secrets. Si queremos ver los keys y values de los secrets en la terminal debemos poner en cualquier ubicacion:
+kubectl get secrets (nombre_del_secret) -o yaml , y para copiar ese contenido mostrado en la terminal a un archivo en nuestro proyecto ponemos sobre la 
+ubicacion donde queramos que se cree ese archivo yaml:
+kubectl get secrets (nombre_del_secret) -o yaml > (nombre_que_tendrá_el_archivo).yml
+Y si queremos editar un secret ponemos (sin necesidad de hacer lo del anterior comando):
+kubectl edit secrets (nombre_del_secret)
+y asi se nos abrirá una ventana, puede ser un archivo txt por ejemplo con el contenido de ese secret y pues lo editamos y guardamos los cambios.
+
+
+Con lo anterior explicado ya podemos ejecutar toda nuestra aplicacion de microservicios en kubernetes de manera local en nuestra computadora.
+Despues implementamos google cloud con kubernetes asi como lo habíamos hecho con aws eks en el curso de spring con docker y kubernetes pero pues
+ahora con google cloud, para eso primero google cloud ya cuando tengamos nuestro cluster de kubernetes ahi estará llamando automaticamente al endpoint
+raiz sin ningun prefijo (osea el endpoint "/") a nuestros pods que tengan acceso al exterior del cluster, osea a los que tienen el service de tipo nodeport, 
+osea nuestros microservicios de gateway-ms y payments-ms, esto para el health-check que hace google cloud automaticamente para ver periodicamente si nuestro 
+proyecto está ejecutandose correctamente, y por eso en este punto en nuestros proyectos de gateway-ms y payments-ms creamos el modulo de health-check con un
+unico endpoint que es el endpoint raiz para que google cloud lo llame para su health-check, y en el caso del gateway-ms para el prefijo asignado de /api en su
+main.ts excluimos ese endpoint raiz para que ese endpoint no tuviera el prefijo de /api.
+
+
