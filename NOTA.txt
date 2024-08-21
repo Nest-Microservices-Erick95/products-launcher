@@ -190,6 +190,7 @@ y asi se nos abrirá una ventana, puede ser un archivo txt por ejemplo con el co
 
 
 Con lo anterior explicado ya podemos ejecutar toda nuestra aplicacion de microservicios en kubernetes de manera local en nuestra computadora.
+
 Despues implementamos google cloud con kubernetes asi como lo habíamos hecho con aws eks en el curso de spring con docker y kubernetes pero pues
 ahora con google cloud, para eso primero google cloud ya cuando tengamos nuestro cluster de kubernetes ahi estará llamando automaticamente al endpoint
 raiz sin ningun prefijo (osea el endpoint "/") a nuestros pods que tengan acceso al exterior del cluster, osea a los que tienen el service de tipo nodeport, 
@@ -197,5 +198,22 @@ osea nuestros microservicios de gateway-ms y payments-ms, esto para el health-ch
 proyecto está ejecutandose correctamente, y por eso en este punto en nuestros proyectos de gateway-ms y payments-ms creamos el modulo de health-check con un
 unico endpoint que es el endpoint raiz para que google cloud lo llame para su health-check, y en el caso del gateway-ms para el prefijo asignado de /api en su
 main.ts excluimos ese endpoint raiz para que ese endpoint no tuviera el prefijo de /api.
+
+Despues todo lo que antes teníamos en la rama cloud-build de git que creamos en todos nuestros proyectos lo pasamos a la rama main haciendo merge y haciendo el
+push a github de la rama cloud-build y main, y entonces editamos la rama a la cual hacer el trigger en el google cloud en la parte de nuestros triggers o 
+activadores en el Cloud build de google cloud de acuerdo a los videos que pusimos de google cloud en la NOTA.txt de la carpeta 03-products-app de este curso, 
+para editarlos simplemente nos vamos donde están los triggers que creamos en el Cloud build de google cloud y en la parte de la derecha le damos en los 3 puntos
+y en donde dice Editar y ahi le cambiamos la rama del repositorio de github en la cual hacer el trigger, que como vimos en los videos del tema de google cloud 
+de la NOTA.txt de la carpeta 03-products-app antes estaba con la rama cloud-build que creamos en nuestros proyectos, y pues al final en este punto se editó para
+que fuera con la rama main en todos los proyectos, y despues en cada trigger o activador de ahi le damos donde dice Ejecutar o Run y donde dice 
+Ejecutar activadores apareciendo ahi la rama main, y eso hará que se ejecute ese trigger construyendo asi nuestras nuevas imagenes de docker de la rama main de 
+github y poniendo esas imagenes en el container registry de google cloud que es el equivalente al docker hub para guardar nuestras imagenes de docker en google 
+cloud como se vio en los videos de google cloud de la carpeta 03-products-app del curso. Esto tambien para ya trabajar sobre la rama main que es la principal.
+
+Para ya la implementacion de kubernetes con google cloud para pasar lo que teníamos en este punto de kubernetes corriendo en nuestra computadora localmente 
+hacia google cloud usamos el servicio de Kubernetes Engine de google cloud, y se puede ver cómo configurarlo y asi en los siguientes videos:
+https://cursos.devtalles.com/courses/take/nestjs-microservicios/lessons/53818337-gcloud-preparar-kubernetes-engine
+https://cursos.devtalles.com/courses/take/nestjs-microservicios/lessons/53818338-configurar-gke  -> en este video el profesor no ejecuta el comando de helm install visto mas arriba despues de ejecutar el comando de helm create, pero a mi me dio error si no ejecuto despues del helm create el helm install , y de hecho hay un comentario de un alumno del curso en ese video que dice que tambien asi solucionó ese error, asi que despues de hacer el helm create ejecutar el helm install tienda-gke . sobre la carpeta de tienda-gke que se cree con el helm create tienda-gke , este ultimo ejecutandose sobre la carpeta k8s/tienda. Y tambien en el video no se ve pero en la carpeta k8s/tienda/tienda-gke/tamplates , osea los templates del tienda-gke, se pegaron de copiar y pegar ahi las carpetas del k8s/tienda/templates , osea las carpetas con los deployments y services de nuestros microservicios que habíamos hecho arriba cuando usabamos kubernetes de manera local en nuestra computadora, y asi ya funcionará todo como se ve en el video, y lo del comando en el video de kubectl create -f auth-secrets.yml lo ejecuté sobre la carpeta de tienda-gke y no sobre la carpeta de tienda, esto porque esos archivos de los secrets los ubiqué sobre la carpeta de tienda-gke, no sobre la carpeta de tienda como se hace en el video, pero pues es lo mismo, aunque en el video tambien se tuvo esa estructura de k8s/tienda/tienda-gke , osea la carpeta de tienda-gke dentro de la carpeta de tienda, tambien lo hizo asi el profesor en este video, aunque en el siguiente video el profesor hace una configuracion para no tenerlo asi y tener solo 1 carpeta de kubernetes, solo una carpeta de tienda pero ya con la configuracion que estamos haciendo para google cloud, eso se ve en el siguiente video
+https://cursos.devtalles.com/courses/take/nestjs-microservicios/lessons/53818341-borrar-archivos-innecesarios
 
 
